@@ -1,0 +1,78 @@
+---
+import { getCollection } from "astro:content";
+import Container from "@components/Container.astro";
+import PageLayout from "@layouts/PageLayout.astro";
+import BlogLink from "@components/BlogLink.astro";
+import Link from "@components/Link.astro";
+import { SITE, HOME, SOCIALS } from "@consts";
+
+const blog = (await getCollection("blog"))
+  .filter((post) => !post.data.draft)
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
+  .slice(0, SITE.NUM_POSTS_ON_HOMEPAGE);
+---
+
+<PageLayout title={HOME.TITLE} description={HOME.DESCRIPTION}>
+  <Container>
+    <h4 class="animate font-semibold text-black dark:text-white">
+      Heyo!!! <span class="text-xl">👋🏾</span>
+    </h4>
+    <br />
+    <img src="https://cdn.twaites.com/site/home-header.webp" alt="Header Image" class="animate  img-special" />
+    <div class="space-y-10">
+      <section>
+        <article class="space-y-4">
+          <p class="animate">
+            Welcome to my website, on someone else's computer in <s>a datacenter</s> the cloud.<br/>
+            You can expect writings about technology I find interesting, insights into my career, life, faith, and more. I'll also showcase my diverse range of projects.
+          </p>
+        </article>
+      </section>
+
+      <section class="animate space-y-6">
+        <div class="flex flex-wrap gap-y-2 items-center justify-between">
+          <h5 class="font-semibold text-black dark:text-white">Latest posts</h5>
+          <Link href="/blog"> See all posts </Link>
+        </div>
+        <ul class="flex flex-col gap-4">
+          {
+            blog.map((post) => (
+              <li>
+                <BlogLink entry={post} />
+              </li>
+            ))
+          }
+        </ul>
+      </section>
+      <section class="animate space-y-4">
+        <h5 class="font-semibold text-black dark:text-white">Say Hello!</h5>
+        <article>
+          <p>
+            Feel free to reach out if you want to get in touch with me about something or just want to say hello. Drop me a message on social media or send an email.
+          </p>
+        </article>
+        <ul class="flex flex-wrap gap-2">
+          {
+            SOCIALS.map((SOCIAL) => (
+              <li class="flex gap-x-2 text-nowrap">
+                <Link
+                  href={SOCIAL.HREF}
+                  external
+                  aria-label={`${SITE.NAME} on ${SOCIAL.NAME}`}
+                >
+                  {SOCIAL.NAME}
+                </Link>
+                {"/"}
+              </li>
+            ))
+          }
+          <li class="line-clamp-1">
+            <Link href="mailto:hello@twaites.com" aria-label="Email hello@twaites.com">
+              hello@twaites.com
+            </Link>
+          </li>
+        </ul>
+      </section>
+    </div>
+  </Container>
+</PageLayout>

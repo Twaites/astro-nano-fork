@@ -1,0 +1,37 @@
+---
+import Container from "@components/Container.astro";
+import PageLayout from "@layouts/PageLayout.astro";
+import { ABOUT } from "@consts";
+---
+
+<PageLayout title={ABOUT.TITLE} description={ABOUT.DESCRIPTION}>
+  <Container>
+    <div class="animate">
+      <div class="animate font-semibold text-black dark:text-white text-xl">
+        Hi, I'm Twaites.
+      </div>
+      <section >
+        <article>
+          <p class="animate">
+            I'm a tech addict who's been using computers for over 30 years. Yes, you read that right—<i>since before Windows 95.</i> Somewhere along the way, over 20 years ago, I taught myself HTML, PHP, MySQL, and enough Linux to probably qualify for a hobbyist LAMP stack certification. That early love of computers directed my path towards a Computer Science degree, which I've parlayed into a career as a software developer that has lasted more than a decade.
+          </p>
+          <p class="animate">
+            I'm passionate about learning. You'll either find me staying up until 3 a.m. reading documentation about a new language or framework, or watching YouTube videos to try to understand the aerodynamics of rockets or laminar flow. My approach to this website will be to create a place where I can constantly experiment with the new things I learn. 
+          </p>
+        </article>
+      </section>
+      <section>
+        <article class="animate">
+          <h4>The site</h4>
+          <p>
+            Created using the <a
+              href="https://github.com/markhorn-dev/astro-nano">Astro Nano</a> theme, but <a href="https://github.com/Twaites/astro-nano-fork">personalized</a > to fit my style.
+            <br />
+            Deployed to <a href="https://www.netlify.com/">Netlify</a>'s global network from Git.<br/>
+            Blog posts written with the assistance of <a href="https://pagescms.org/">Pages CMS</a> and checked for clarity by AI.
+          </p>
+        </article>
+      </section>
+    </div>
+  </Container>
+</PageLayout>
