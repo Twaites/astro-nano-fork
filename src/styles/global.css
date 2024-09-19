@@ -85,3 +85,15 @@ html.scrolled #back-to-top {
 .img-special{
   border-radius: 0.5rem;
 }
+
+#header-theme-button{
+  margin-left: -0.4rem;
+}
+.search-icon{
+  margin-top: -0.04rem;
+}
+
+#theme-button{
+  margin-top: -0.04rem;
+  margin-left: -0.1rem;
+}

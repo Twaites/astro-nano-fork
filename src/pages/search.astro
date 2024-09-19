@@ -1,0 +1,19 @@
+---
+import PageLayout from "@layouts/PageLayout.astro";
+import Container from "@components/Container.astro";
+import { SEARCH } from "@consts";
+import SearchLogic from "@components/SearchLogic";
+---
+
+<PageLayout title={SEARCH.TITLE} description={SEARCH.DESCRIPTION}>
+  <Container >
+    <div class="space-y-8">
+      <div class="animate font-semibold text-black dark:text-white text-xl">
+        Search
+      </div>
+      <div class="animate">
+        <SearchLogic  client:only="solid-js" />
+      </div>
+    </div>
+  </Container>
+</PageLayout>

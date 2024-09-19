@@ -13,14 +13,14 @@ export const HOME: Metadata = {
   DESCRIPTION: "Kory Twaites' blog and portfolio.",
 };
 
-export const BLOG: Metadata = {
-  TITLE: "Blog",
-  DESCRIPTION: "Writings about tech, life, career, faith and more.",
-};
-
 export const ABOUT: Metadata = {
   TITLE: "About",
   DESCRIPTION: "Who is Twaites?",
+};
+
+export const BLOG: Metadata = {
+  TITLE: "Blog",
+  DESCRIPTION: "Writings about tech, life, career, faith and more.",
 };
 
 export const PROJECTS: Metadata = {
@@ -33,6 +33,10 @@ export const LOST_404: Metadata = {
   DESCRIPTION: "Uh Oh... Looks like you're lost",
 };
 
+export const SEARCH: Metadata = {
+  TITLE: "Search",
+  DESCRIPTION: "What are you looking for?",
+};
 export const SOCIALS: Socials = [
   {
     NAME: "twitter",
