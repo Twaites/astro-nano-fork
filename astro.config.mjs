@@ -4,8 +4,11 @@ import sitemap from "@astrojs/sitemap";
 import tailwind from "@astrojs/tailwind";
 import solidJs from "@astrojs/solid-js";
 
+import netlify from "@astrojs/netlify";
+
 // https://astro.build/config
 export default defineConfig({
   site: "https://twaites.com",
-  integrations: [mdx(), sitemap(), tailwind(), solidJs()]
+  integrations: [mdx(), sitemap(), tailwind(), solidJs()],
+  adapter: netlify()
 });

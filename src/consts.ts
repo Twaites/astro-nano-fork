@@ -37,6 +37,12 @@ export const SEARCH: Metadata = {
   TITLE: "Search",
   DESCRIPTION: "What are you looking for?",
 };
+
+export const SMART_SEARCH: Metadata = {
+  TITLE: "Smart Search",
+  DESCRIPTION: "What are you looking for?",
+};
+
 export const SOCIALS: Socials = [
   {
     NAME: "twitter",
