@@ -11,7 +11,10 @@ import { readdir } from "fs/promises";
 import {
   initUpstashClient,
   setMetaCache,
+  buildCacheFromProcessedFiles,
   processMarkdownFile,
+  isMarkdownFile,
+  CONTENT_DIRS,
 } from "./indexing-utils.mjs";
 
 // Initialize Upstash Search client and indexes
@@ -21,23 +24,20 @@ const { searchIndex, metaIndex } = initUpstashClient();
  * Gather all documents from a directory for indexing
  * @param {string} dir - Directory path to process
  * @param {string} type - Content type ("blog" or "project")
- * @returns {Promise<Array>} Array of all document objects ready for indexing
+ * @returns {Promise<Object>} Object with documents array and processedFiles array for cache building
  */
 async function gatherDocs(dir, type) {
   const allDocs = [];
+  const processedFiles = [];
   const files = await readdir(dir);
 
   for (const file of files) {
-    // Only process markdown files
-    if (!file.endsWith(".md") && !file.endsWith(".mdx")) continue;
+    if (!isMarkdownFile(file)) continue;
 
     const filePath = `${dir}/${file}`;
-    
-    // Process the markdown file (parse, clean, chunk, create documents)
     const result = await processMarkdownFile(filePath, type);
     
     if (!result) {
-      // File is a draft, skip it
       console.log(`Skipping draft: ${file}`);
       continue;
     }
@@ -46,9 +46,15 @@ async function gatherDocs(dir, type) {
     
     // Add all document chunks to the collection
     allDocs.push(...result.documents);
+    
+    // Store for cache building (avoid re-processing files)
+    processedFiles.push({
+      filePath,
+      documents: result.documents,
+    });
   }
 
-  return allDocs;
+  return { documents: allDocs, processedFiles };
 }
 
 /**
@@ -66,20 +72,18 @@ async function runFullReindex() {
   }
 
   // Gather all documents from both blog and project directories
-  const allDocs = [
-    ...(await gatherDocs("./src/content/blog", "blog")),
-    ...(await gatherDocs("./src/content/projects", "project")),
-  ];
+  const blogData = await gatherDocs(CONTENT_DIRS.BLOG, "blog");
+  const projectData = await gatherDocs(CONTENT_DIRS.PROJECTS, "project");
+  
+  const allDocs = [...blogData.documents, ...projectData.documents];
+  const allProcessedFiles = [...blogData.processedFiles, ...projectData.processedFiles];
 
   // Upload all documents in a single batch operation
   console.log(`Total chunks to index: ${allDocs.length}`);
   await searchIndex.upsert(allDocs);
 
-  // Rebuild the meta cache with all document IDs and current timestamp
-  const cache = {};
-  for (const doc of allDocs) {
-    cache[doc.id] = Date.now();
-  }
+  // Rebuild the meta cache from already processed files (no re-processing needed!)
+  const cache = buildCacheFromProcessedFiles(allProcessedFiles);
 
   // Save the new cache to Upstash
   await setMetaCache(metaIndex, cache);

@@ -1,4 +1,4 @@
-import { readFile } from "fs/promises";
+import { readFile, readdir } from "fs/promises";
 import { execSync } from "child_process";
 import matter from "gray-matter";
 import { Search } from "@upstash/search";
@@ -6,6 +6,10 @@ import { Search } from "@upstash/search";
 // Constants
 export const MAX_TOTAL = 4096;
 export const SAFETY_BUFFER = 8;
+export const CONTENT_DIRS = {
+  BLOG: "./src/content/blog",
+  PROJECTS: "./src/content/projects",
+};
 
 // Document schema:
 // id: unique slug or slug#chunk
@@ -201,7 +205,7 @@ export async function processMarkdownFile(filePath, type) {
 export async function getMetaCache(metaIndex) {
   try {
     const res = await metaIndex.fetch(["__cache__"]);
-    return res?.[0]?.content?.cache || {};
+    return res?.[0]?.metadata?.cache || {};
   } catch {
     return {};
   }
@@ -212,7 +216,65 @@ export async function getMetaCache(metaIndex) {
  */
 export async function setMetaCache(metaIndex, cache) {
   await metaIndex.upsert([
-    { id: "__cache__", content: { cache, updatedAt: Date.now() } },
+    {
+      id: "__cache__",
+      content: { updatedAt: Date.now() },
+      metadata: { cache },
+    },
   ]);
+}
+
+/**
+ * Check if a file is a markdown file
+ * @param {string} file - Filename to check
+ * @returns {boolean} True if file is markdown
+ */
+export function isMarkdownFile(file) {
+  return file.endsWith(".md") || file.endsWith(".mdx");
+}
+
+/**
+ * Build a cache object from already processed documents
+ * Maps document IDs to their git commit timestamps
+ * @param {Array} processedFiles - Array of { filePath, documents } objects
+ * @returns {Object} Cache object with document ID -> git timestamp mapping
+ */
+export function buildCacheFromProcessedFiles(processedFiles) {
+  const cache = {};
+  for (const { filePath, documents } of processedFiles) {
+    const lastGitChange = getLastGitChange(filePath);
+    for (const doc of documents) {
+      cache[doc.id] = lastGitChange;
+    }
+  }
+  return cache;
+}
+
+/**
+ * Build a cache object mapping document IDs to their git commit timestamps
+ * @param {string} dir - Directory path to process
+ * @param {string} type - Content type ("blog" or "project")
+ * @returns {Promise<Object>} Cache object with document ID -> git timestamp mapping
+ */
+export async function buildCacheFromFiles(dir, type) {
+  const cache = {};
+  const files = await readdir(dir);
+
+  for (const file of files) {
+    if (!isMarkdownFile(file)) continue;
+
+    const filePath = `${dir}/${file}`;
+    const lastGitChange = getLastGitChange(filePath);
+    const result = await processMarkdownFile(filePath, type);
+    
+    if (!result) continue; // Skip drafts
+
+    // Store git timestamp for each document ID that was created from this file
+    for (const doc of result.documents) {
+      cache[doc.id] = lastGitChange;
+    }
+  }
+
+  return cache;
 }
 
