@@ -1,4 +1,4 @@
-import { createSignal, Show, For, onMount } from "solid-js";
+import { createSignal, Show, For, onMount, createEffect, onCleanup } from "solid-js";
 
 interface SearchResult {
   id: string;
@@ -11,20 +11,24 @@ interface SearchResult {
 
 export default function SmartSearch() {
   const [query, setQuery] = createSignal("");
+  const [searchedQuery, setSearchedQuery] = createSignal(""); // Only updates when search is performed
   const [results, setResults] = createSignal<SearchResult[]>([]);
   const [loading, setLoading] = createSignal(false);
   const [error, setError] = createSignal("");
   const [hasSearched, setHasSearched] = createSignal(false);
+  const [searchingDots, setSearchingDots] = createSignal(1);
 
   async function performSearch() {
     const q = query().trim();
     if (q.length < 2) {
       setResults([]);
       setError("Enter at least 2 characters to search.");
+      setHasSearched(false);
       return;
     }
 
     setHasSearched(true);
+    setSearchedQuery(q); // Store the query that was actually searched
     try {
       setLoading(true);
       setError("");
@@ -70,10 +74,24 @@ export default function SmartSearch() {
     performSearch();
   }
 
+  // Animate "Searching." -> "Searching.." -> "Searching..."
+  createEffect(() => {
+    if (!loading()) {
+      setSearchingDots(1);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setSearchingDots((prev) => (prev >= 3 ? 1 : prev + 1));
+    }, 300);
+    
+    onCleanup(() => clearInterval(interval));
+  });
+
   onMount(() => {
     const params = new URLSearchParams(window.location.search);
     const searchQuery = params.get("")?.trim();
-    if (searchQuery) {
+    if (searchQuery && searchQuery.length >= 2) {
       setQuery(searchQuery);
       performSearch();
     }
@@ -104,11 +122,19 @@ export default function SmartSearch() {
 
       <div>
         <Show when={loading()}>
-          <p class="text-gray-500 dark:text-gray-400 mt-4">Searching...</p>
+          <p class="text-gray-500 dark:text-gray-400 mt-4">
+            Searching{Array(searchingDots()).fill(".").join("")}
+          </p>
         </Show>
 
         <Show when={error()}>
           <p class="text-red-600 dark:text-red-400 mt-4">{error()}</p>
+        </Show>
+
+        <Show when={hasSearched() && !loading() && searchedQuery().length >= 2}>
+          <p class="flex flex-col mt-5">
+            {`Search results for "${searchedQuery()}"`}
+          </p>
         </Show>
 
         <Show when={hasSearched()}>

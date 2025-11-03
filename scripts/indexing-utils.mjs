@@ -5,7 +5,7 @@ import { Search } from "@upstash/search";
 
 // Constants
 export const MAX_TOTAL = 4096;
-export const SAFETY_BUFFER = 8; // Reduced since we now calculate exact ID overhead
+export const SAFETY_BUFFER = 8;
 
 // Document schema:
 // id: unique slug or slug#chunk
@@ -13,7 +13,7 @@ export const SAFETY_BUFFER = 8; // Reduced since we now calculate exact ID overh
 //   t: Title (first chunk only)
 //   d: Description (first chunk only)
 //   c: Content type ("b" = blog, "p" = project)
-//   text: Combined searchable text
+//   b: Body/searchable text content
 // }
 
 /**
@@ -65,7 +65,7 @@ export function cleanText(text) {
 export function calcDynamicBodyLimit({ id, t, d, c }) {
   const sample = {
     id,
-    content: { t, d, c, text: "" },
+    content: { t, d, c, b: "" },
   };
   const jsonOverhead = JSON.stringify(sample).length;
   return Math.max(512, MAX_TOTAL - jsonOverhead - SAFETY_BUFFER);
@@ -106,7 +106,7 @@ export function splitIntoDynamicChunksByWords(text, firstChunkLimit, regularLimi
  */
 export function createDocumentsFromChunks({ slug, title, description, contentType, chunks }) {
   return chunks.map((chunk, i) => {
-    const text = chunk.trim();
+    const body = chunk.trim();
     
     const doc = {
       id: i === 0 ? slug : `${slug}#${i + 1}`,
@@ -114,7 +114,7 @@ export function createDocumentsFromChunks({ slug, title, description, contentTyp
         t: i === 0 ? title || "" : "",
         d: i === 0 ? description || "" : "",
         c: contentType,
-        text,
+        b: body,
       },
     };
 
@@ -123,20 +123,20 @@ export function createDocumentsFromChunks({ slug, title, description, contentTyp
     const jsonLen = JSON.stringify(doc).length;
     if (jsonLen > MAX_TOTAL) {
       const overBy = jsonLen - MAX_TOTAL;
-      const targetLength = Math.max(0, doc.content.text.length - overBy - SAFETY_BUFFER);
+      const targetLength = Math.max(0, doc.content.b.length - overBy - SAFETY_BUFFER);
       
       // Trim by words, not characters, to avoid breaking words
-      if (targetLength < doc.content.text.length) {
-        const words = doc.content.text.split(" ");
-        let trimmedText = "";
+      if (targetLength < doc.content.b.length) {
+        const words = doc.content.b.split(" ");
+        let trimmedBody = "";
         for (const word of words) {
-          if ((trimmedText.length + word.length + 1) <= targetLength) {
-            trimmedText += (trimmedText ? " " : "") + word;
+          if ((trimmedBody.length + word.length + 1) <= targetLength) {
+            trimmedBody += (trimmedBody ? " " : "") + word;
           } else {
             break;
           }
         }
-        doc.content.text = trimmedText.trim();
+        doc.content.b = trimmedBody.trim();
       }
     }
 

@@ -8,7 +8,7 @@ type SearchDocContent = {
   t?: string; // title
   d?: string; // description
   c?: string; // category/content type
-  text?: string; // chunked searchable text
+  b?: string; // body/searchable text content
 };
 
 /**
@@ -57,7 +57,6 @@ export const GET: APIRoute = async ({ request }) => {
       content: { t?: string; d?: string; c?: string };
       textFragments: string[];
       requiresParentFetch: boolean;
-      removeResult?: boolean;
     };
 
     const aggregated = new Map<string, AggregatedDoc>();
@@ -82,8 +81,8 @@ export const GET: APIRoute = async ({ request }) => {
       const doc = aggregated.get(slug)!;
       doc.totalScore += score; // sum chunk scores
 
-      // ✅ Safely push text if available
-      if (content?.text) doc.textFragments.push(content.text);
+      // ✅ Safely push body text if available
+      if (content?.b) doc.textFragments.push(content.b);
 
       // ✅ Update metadata from best scoring chunk
       if (score > doc.bestChunkScore) {
@@ -129,8 +128,8 @@ export const GET: APIRoute = async ({ request }) => {
       }
     }
 
-    // STEP 4: Build merged list with accumulated text
-    const mergedDocs = [...aggregated.values()]
+    // STEP 4: Build merged list and strip internal fields
+    const finalResults = [...aggregated.values()]
       .map((doc) => ({
         id: doc.id,
         score: Number(doc.totalScore.toFixed(4)),
@@ -139,32 +138,8 @@ export const GET: APIRoute = async ({ request }) => {
           d: doc.content.d || "",
           c: doc.content.c || "",
         },
-        combinedText: doc.textFragments.join(" "),
-        removeResult: false,
       }))
       .sort((a, b) => b.score - a.score);
-
-    // STEP 5: Keyword-based overlay filter
-    const queryWords = query.toLowerCase().split(/\s+/).filter(Boolean);
-    let anyKeywordMatched = false;
-
-    for (const item of mergedDocs) {
-      const haystack = `${item.content.t} ${item.content.d} ${item.combinedText}`.toLowerCase();
-      const keywordMatch = queryWords.some((word) => haystack.includes(word));
-
-      if (keywordMatch) {
-        anyKeywordMatched = true;
-      } else {
-        item.removeResult = true;
-      }
-    }
-
-    const filteredDocs = anyKeywordMatched
-      ? mergedDocs.filter((r) => !r.removeResult)
-      : mergedDocs;
-
-    // STEP 6: Strip internal fields before sending to client
-    const finalResults = filteredDocs.map(({ combinedText, removeResult, ...rest }) => rest);
 
     return jsonResponse({ results: finalResults });
   } catch (err: any) {
