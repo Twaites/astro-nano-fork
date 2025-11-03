@@ -72,7 +72,7 @@ export function calcDynamicBodyLimit({ id, t, d, c }) {
     content: { t, d, c, b: "" },
   };
   const jsonOverhead = JSON.stringify(sample).length;
-  return Math.max(512, MAX_TOTAL - jsonOverhead - SAFETY_BUFFER);
+  return MAX_TOTAL - jsonOverhead - SAFETY_BUFFER;
 }
 
 /**
