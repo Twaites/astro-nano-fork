@@ -15,6 +15,7 @@ import {
   setMetaCache,
   processMarkdownFile,
   isMarkdownFile,
+  getParentSlug,
 } from "./indexing-utils.mjs";
 
 // Initialize Upstash Search client and indexes
@@ -42,19 +43,16 @@ async function processDir(dir, type, metaCache, newCache) {
       continue;
     }
 
-    // Check if any document ID from this file has changed
-    // Compare git timestamp with the cached timestamp for the first document ID (slug)
-    const firstDocId = result.documents[0].id;
-    const lastIndexed = metaCache[firstDocId] || -1;
+    // Check if the file has changed by comparing git timestamp with cached timestamp for parent slug
+    const parentSlug = getParentSlug(result.documents[0].id);
+    const lastIndexed = metaCache[parentSlug] || -1;
 
     // Skip if file hasn't changed since last indexing
     if (lastGitChange <= lastIndexed) {
       console.log(`No changes in ${file}`);
-      // Still copy existing cache entries for this file's document IDs
-      for (const doc of result.documents) {
-        if (metaCache[doc.id]) {
-          newCache[doc.id] = metaCache[doc.id];
-        }
+      // Copy existing cache entry for parent slug if it exists
+      if (metaCache[parentSlug]) {
+        newCache[parentSlug] = metaCache[parentSlug];
       }
       continue;
     }
@@ -64,10 +62,8 @@ async function processDir(dir, type, metaCache, newCache) {
     // Batch upload all documents for this file
     await searchIndex.upsert(result.documents);
     
-    // Update cache with git timestamp for each document ID
-    for (const doc of result.documents) {
-      newCache[doc.id] = lastGitChange;
-    }
+    // Update cache with git timestamp for parent slug only
+    newCache[parentSlug] = lastGitChange;
   }
 }
 

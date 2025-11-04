@@ -234,27 +234,39 @@ export function isMarkdownFile(file) {
 }
 
 /**
+ * Extract parent slug from document ID (removes chunk number suffix like #2, #3, etc.)
+ * @param {string} docId - Document ID (e.g., "slug" or "slug#2")
+ * @returns {string} Parent slug without chunk number
+ */
+export function getParentSlug(docId) {
+  const hashIndex = docId.indexOf("#");
+  return hashIndex === -1 ? docId : docId.substring(0, hashIndex);
+}
+
+/**
  * Build a cache object from already processed documents
  * Maps document IDs to their git commit timestamps
  * @param {Array} processedFiles - Array of { filePath, documents } objects
- * @returns {Object} Cache object with document ID -> git timestamp mapping
+ * @returns {Object} Cache object with parent slug-> git timestamp mapping
  */
 export function buildCacheFromProcessedFiles(processedFiles) {
   const cache = {};
   for (const { filePath, documents } of processedFiles) {
     const lastGitChange = getLastGitChange(filePath);
-    for (const doc of documents) {
-      cache[doc.id] = lastGitChange;
+    // Only store the parent slug (first document is always the parent)
+    if (documents.length > 0) {
+      const parentSlug = getParentSlug(documents[0].id);
+      cache[parentSlug] = lastGitChange;
     }
   }
   return cache;
 }
 
 /**
- * Build a cache object mapping document IDs to their git commit timestamps
+ * Build a cache object mapping parent slugs to their git commit timestamps
  * @param {string} dir - Directory path to process
  * @param {string} type - Content type ("blog" or "project")
- * @returns {Promise<Object>} Cache object with document ID -> git timestamp mapping
+ * @returns {Promise<Object>} Cache object with parent slug -> git timestamp mapping
  */
 export async function buildCacheFromFiles(dir, type) {
   const cache = {};
@@ -269,9 +281,10 @@ export async function buildCacheFromFiles(dir, type) {
     
     if (!result) continue; // Skip drafts
 
-    // Store git timestamp for each document ID that was created from this file
-    for (const doc of result.documents) {
-      cache[doc.id] = lastGitChange;
+    // Only store the parent slug (first document is always the parent)
+    if (result.documents.length > 0) {
+      const parentSlug = getParentSlug(result.documents[0].id);
+      cache[parentSlug] = lastGitChange;
     }
   }
 
