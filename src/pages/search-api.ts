@@ -48,14 +48,13 @@ export const GET: APIRoute = async ({ request }) => {
     );
 
     /**
-     * Each parent slug accumulates all its chunk scores and text.
+     * Each parent slug accumulates all its chunk scores.
      */
     type AggregatedDoc = {
       id: string;
       totalScore: number;
       bestChunkScore: number;
       content: { t?: string; d?: string; c?: string };
-      textFragments: string[];
       requiresParentFetch: boolean;
     };
 
@@ -73,16 +72,12 @@ export const GET: APIRoute = async ({ request }) => {
           totalScore: 0,
           bestChunkScore: -Infinity,
           content: {},
-          textFragments: [],
           requiresParentFetch: true,
         });
       }
 
       const doc = aggregated.get(slug)!;
       doc.totalScore += score; // sum chunk scores
-
-      // ✅ Safely push body text if available
-      if (content?.b) doc.textFragments.push(content.b);
 
       // ✅ Update metadata from best scoring chunk
       if (score > doc.bestChunkScore) {
