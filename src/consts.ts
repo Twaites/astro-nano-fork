@@ -38,8 +38,8 @@ export const SEARCH: Metadata = {
   DESCRIPTION: "What are you looking for?",
 };
 
-export const SMART_SEARCH: Metadata = {
-  TITLE: "Smart Search",
+export const SEMANTIC_SEARCH: Metadata = {
+  TITLE: "Semantic Search",
   DESCRIPTION: "What are you looking for?",
 };
 

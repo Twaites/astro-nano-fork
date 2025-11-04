@@ -9,7 +9,7 @@ interface SearchResult {
   };
 }
 
-export default function SmartSearch() {
+export default function SemanticSearch() {
   const [query, setQuery] = createSignal("");
   const [searchedQuery, setSearchedQuery] = createSignal(""); // Only updates when search is performed
   const [results, setResults] = createSignal<SearchResult[]>([]);
